@@ -1267,4 +1267,19 @@
     <string name="view_chapters">View chapters</string>
     <string name="warning">Warning</string>
     <string name="wifi">Wi-Fi</string>
+    <string name="custom_dusk">Custom Dusk</string>
+    <string name="custom_dusk_accent">Custom Dusk accent</string>
+    <string name="colour_hex">Hex colour</string>
+    <string name="hue">Hue</string>
+    <string name="saturation">Saturation</string>
+    <string name="brightness">Brightness</string>
+    <string name="custom_dusk_download_badge_colour">Download badge colour</string>
+    <string name="light_accent">Light accent</string>
+    <string name="dark_accent">Dark accent</string>
+    <string name="light_contrast">Light contrast</string>
+    <string name="dark_contrast">Dark contrast</string>
+    <string name="sliders">Sliders</string>
+    <string name="honeycomb">Honeycomb</string>
+    <string name="custom">Custom</string>
+    <string name="custom_dusk_custom_download_badge_colour">Custom download badge colour</string>
 </resources>

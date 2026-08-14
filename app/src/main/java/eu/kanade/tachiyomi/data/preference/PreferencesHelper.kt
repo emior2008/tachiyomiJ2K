@@ -129,6 +129,12 @@ class PreferencesHelper(
 
     fun themeDarkAmoled() = flowPrefs.getBoolean(Keys.themeDarkAmoled, false)
 
+    fun customDuskAccentColor() = flowPrefs.getInt(Keys.customDuskAccentColor, 0xFFF02475.toInt())
+
+    fun customDuskDownloadBadgeStyle() = flowPrefs.getString(Keys.customDuskDownloadBadgeStyle, "dark_contrast")
+
+    fun customDuskDownloadBadgeColor() = flowPrefs.getInt(Keys.customDuskDownloadBadgeColor, 0xFF127C52.toInt())
+
     private val supportsDynamic = DynamicColors.isDynamicColorAvailable()
 
     fun lightTheme() = flowPrefs.getEnum(Keys.lightTheme, if (supportsDynamic) Themes.MONET else Themes.DEFAULT)

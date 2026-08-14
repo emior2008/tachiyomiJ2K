@@ -101,3 +101,7 @@
     public <init>();
     public void destroy();
 }
+# Custom Dusk creates a small API 30+ resource loader through Material's internal table creator.
+# Keep only the reflected creator; unlike ColorResourcesOverride this does not apply a
+# Material personalized-colors theme overlay.
+-keep class com.google.android.material.color.ColorResourcesLoaderCreator { *; }

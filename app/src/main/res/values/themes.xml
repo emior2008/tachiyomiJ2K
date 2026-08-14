@@ -165,6 +165,20 @@
         <item name="colorSurfaceContainerLowest">@color/surfaceContainerLowestDuskDawn</item>
     </style>
 
+    <style name="Theme.Tachiyomi.CustomDusk" parent="Theme.Tachiyomi.MidnightDusk">
+        <item name="colorPrimary">@color/custom_dusk_primary</item>
+        <item name="colorPrimaryInverse">@color/custom_dusk_primary_inverse</item>
+        <item name="colorOnPrimary">@color/custom_dusk_on_primary</item>
+        <item name="colorControlHighlight">@color/custom_dusk_ripple</item>
+        <item name="colorSecondary">@color/custom_dusk_secondary</item>
+        <item name="colorPrimaryContainer">@color/custom_dusk_primary_container</item>
+        <item name="colorSecondaryContainer">@color/custom_dusk_secondary_container</item>
+        <item name="colorOnPrimaryContainer">@color/custom_dusk_on_primary_container</item>
+        <item name="colorTertiary">@color/custom_dusk_tertiary</item>
+        <item name="colorOnTertiary">@color/custom_dusk_on_tertiary</item>
+        <item name="tabHighlightBackground">@color/custom_dusk_ripple</item>
+    </style>
+
     <style name="Theme.Tachiyomi.SapphireDusk">
         <item name="colorPrimary">@color/primaryTealSapphire</item>
         <item name="colorPrimaryInverse">@color/primaryInverseTealSapphire</item>

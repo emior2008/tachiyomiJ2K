@@ -39,6 +39,7 @@ import eu.kanade.tachiyomi.data.database.DatabaseHelper
 import eu.kanade.tachiyomi.data.database.models.Manga
 import eu.kanade.tachiyomi.data.library.CustomMangaManager
 import eu.kanade.tachiyomi.data.preference.Preference
+import eu.kanade.tachiyomi.data.preference.PreferenceKeys
 import eu.kanade.tachiyomi.data.preference.PreferenceStore
 import eu.kanade.tachiyomi.data.preference.PreferencesHelper
 import eu.kanade.tachiyomi.source.ConfigurableSource
@@ -46,6 +47,7 @@ import eu.kanade.tachiyomi.source.SourceManager
 import eu.kanade.tachiyomi.source.preferenceKey
 import eu.kanade.tachiyomi.source.sourcePreferences
 import eu.kanade.tachiyomi.ui.library.LibrarySort
+import eu.kanade.tachiyomi.util.system.Themes
 import kotlinx.serialization.protobuf.ProtoBuf
 import okio.buffer
 import okio.gzip
@@ -253,7 +255,27 @@ class BackupCreator(
 
     private fun backupAppPreferences(flags: Int): List<BackupPreference> {
         if (flags and BACKUP_APP_PREFS_MASK != BACKUP_APP_PREFS) return emptyList()
-        return preferenceStore.getAll().toBackupPreferences()
+
+        return preferenceStore
+            .getAll()
+            .toBackupPreferences()
+            .mapNotNull { preference ->
+                when (preference.key) {
+                    PreferenceKeys.customDuskAccentColor,
+                    PreferenceKeys.customDuskDownloadBadgeStyle,
+                    PreferenceKeys.customDuskDownloadBadgeColor,
+                    -> null
+                    PreferenceKeys.darkTheme -> {
+                        val theme = (preference.value as? StringPreferenceValue)?.value
+                        if (theme == Themes.CUSTOM_DUSK.name) {
+                            preference.copy(value = StringPreferenceValue(Themes.SPRING_AND_DUSK.name))
+                        } else {
+                            preference
+                        }
+                    }
+                    else -> preference
+                }
+            }
     }
 
     private fun backupSourcePreferences(flags: Int): List<BackupSourcePreferences> {

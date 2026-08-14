@@ -1,6 +1,8 @@
 package eu.kanade.tachiyomi.ui.setting
 
 import android.annotation.SuppressLint
+import android.graphics.Color
+import android.os.Build
 import android.os.Bundle
 import android.view.View
 import androidx.appcompat.app.AppCompatDelegate
@@ -11,7 +13,9 @@ import eu.kanade.tachiyomi.R
 import eu.kanade.tachiyomi.data.preference.asImmediateFlow
 import eu.kanade.tachiyomi.data.preference.asImmediateFlowIn
 import eu.kanade.tachiyomi.ui.main.MainActivity
+import eu.kanade.tachiyomi.util.system.CustomDuskDownloadBadgeStyle
 import eu.kanade.tachiyomi.util.system.SideNavMode
+import eu.kanade.tachiyomi.util.system.Themes
 import eu.kanade.tachiyomi.util.system.appDelegateNightMode
 import eu.kanade.tachiyomi.util.system.dpToPx
 import eu.kanade.tachiyomi.util.system.getPrefTheme
@@ -44,6 +48,102 @@ class SettingsAppearanceController : SettingsController() {
                         summary = context.getString(context.getPrefTheme(preferences).nameRes)
                         activity = this@SettingsAppearanceController.activity
                     }
+
+                preference {
+                    key = "custom_dusk_accent_picker"
+                    titleRes = R.string.custom_dusk_accent
+                    summary = formatCustomDuskColor(preferences.customDuskAccentColor().get())
+                    isVisible =
+                        Build.VERSION.SDK_INT >= Build.VERSION_CODES.R &&
+                        preferences.darkTheme().get() == Themes.CUSTOM_DUSK
+
+                    preferences.darkTheme().asImmediateFlowIn(viewScope) { darkTheme ->
+                        isVisible =
+                            Build.VERSION.SDK_INT >= Build.VERSION_CODES.R &&
+                            darkTheme == Themes.CUSTOM_DUSK
+                    }
+
+                    onClick {
+                        val hostActivity = activity ?: return@onClick
+                        CustomDuskColorDialog.show(
+                            hostActivity,
+                            preferences.customDuskAccentColor().get(),
+                        ) { color ->
+                            preferences.customDuskAccentColor().set(color)
+                            summary = formatCustomDuskColor(color)
+                            themePreference?.fastAdapterDark?.notifyDataSetChanged()
+                            if (context.getPrefTheme(preferences) == Themes.CUSTOM_DUSK) {
+                                (activity as? MainActivity)?.recreateFully() ?: activity?.recreate()
+                            }
+                        }
+                    }
+                }
+
+                listPreference(activity) {
+                    key = Keys.customDuskDownloadBadgeStyle
+                    titleRes = R.string.custom_dusk_download_badge_colour
+                    val styles = CustomDuskDownloadBadgeStyle.entries
+                    entriesRes =
+                        arrayOf(
+                            R.string.light_accent,
+                            R.string.dark_accent,
+                            R.string.light_contrast,
+                            R.string.dark_contrast,
+                            R.string.custom,
+                        )
+                    entryValues = styles.map { it.preferenceValue }
+                    defaultValue = CustomDuskDownloadBadgeStyle.DARK_CONTRAST.preferenceValue
+                    isVisible =
+                        Build.VERSION.SDK_INT >= Build.VERSION_CODES.R &&
+                        preferences.darkTheme().get() == Themes.CUSTOM_DUSK
+
+                    preferences.darkTheme().asImmediateFlowIn(viewScope) { darkTheme ->
+                        isVisible =
+                            Build.VERSION.SDK_INT >= Build.VERSION_CODES.R &&
+                            darkTheme == Themes.CUSTOM_DUSK
+                    }
+
+                    onChange {
+                        if (context.getPrefTheme(preferences) == Themes.CUSTOM_DUSK) {
+                            (activity as? MainActivity)?.recreateFully() ?: activity?.recreate()
+                        }
+                        true
+                    }
+                }
+
+                preference {
+                    key = "custom_dusk_download_badge_custom_picker"
+                    titleRes = R.string.custom_dusk_custom_download_badge_colour
+                    summary = formatCustomDuskColor(preferences.customDuskDownloadBadgeColor().get())
+
+                    fun updateVisibility() {
+                        isVisible =
+                            Build.VERSION.SDK_INT >= Build.VERSION_CODES.R &&
+                            preferences.darkTheme().get() == Themes.CUSTOM_DUSK &&
+                            CustomDuskDownloadBadgeStyle.fromPreference(
+                                preferences.customDuskDownloadBadgeStyle().get(),
+                            ) == CustomDuskDownloadBadgeStyle.CUSTOM
+                    }
+
+                    updateVisibility()
+                    preferences.darkTheme().asImmediateFlowIn(viewScope) { updateVisibility() }
+                    preferences.customDuskDownloadBadgeStyle().asImmediateFlowIn(viewScope) { updateVisibility() }
+
+                    onClick {
+                        val hostActivity = activity ?: return@onClick
+                        CustomDuskColorDialog.show(
+                            hostActivity,
+                            preferences.customDuskDownloadBadgeColor().get(),
+                            R.string.custom_dusk_custom_download_badge_colour,
+                        ) { color ->
+                            preferences.customDuskDownloadBadgeColor().set(color)
+                            summary = formatCustomDuskColor(color)
+                            if (context.getPrefTheme(preferences) == Themes.CUSTOM_DUSK) {
+                                (activity as? MainActivity)?.recreateFully() ?: activity?.recreate()
+                            }
+                        }
+                    }
+                }
 
                 switchPreference {
                     key = "night_mode_switch"
@@ -178,6 +278,12 @@ class SettingsAppearanceController : SettingsController() {
                 infoPreference(R.string.by_default_side_nav_info)
             }
         }
+
+    private fun formatCustomDuskColor(color: Int): String =
+        String.format(
+            "#%06X",
+            Color.rgb(Color.red(color), Color.green(color), Color.blue(color)) and 0xFFFFFF,
+        )
 
     override fun onDestroyView(view: View) {
         super.onDestroyView(view)

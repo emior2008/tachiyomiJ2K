@@ -7,6 +7,7 @@ import android.content.res.Configuration
 import android.content.res.Configuration.UI_MODE_NIGHT_NO
 import android.content.res.Configuration.UI_MODE_NIGHT_YES
 import android.graphics.Color
+import android.os.Build
 import android.util.AttributeSet
 import android.view.View
 import androidx.appcompat.app.AppCompatDelegate
@@ -28,6 +29,7 @@ import eu.kanade.tachiyomi.data.preference.PreferencesHelper
 import eu.kanade.tachiyomi.databinding.ThemeItemBinding
 import eu.kanade.tachiyomi.databinding.ThemesPreferenceBinding
 import eu.kanade.tachiyomi.ui.main.MainActivity
+import eu.kanade.tachiyomi.util.system.CustomDuskPalette
 import eu.kanade.tachiyomi.util.system.ThemeUtil
 import eu.kanade.tachiyomi.util.system.Themes
 import eu.kanade.tachiyomi.util.system.appDelegateNightMode
@@ -70,13 +72,19 @@ class ThemePreference
             val supportsDynamic = DynamicColors.isDynamicColorAvailable()
             itemAdapterLight.set(
                 enumConstants
-                    .filter { (!it.isDarkTheme || it.followsSystem) && (it.styleRes != R.style.Theme_Tachiyomi_Monet || supportsDynamic) }
-                    .map { ThemeItem(it, false) },
+                    .filter {
+                        (!it.isDarkTheme || it.followsSystem) &&
+                            (it.styleRes != R.style.Theme_Tachiyomi_Monet || supportsDynamic) &&
+                            (it != Themes.CUSTOM_DUSK || Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
+                    }.map { ThemeItem(it, false) },
             )
             itemAdapterDark.set(
                 enumConstants
-                    .filter { (it.isDarkTheme || it.followsSystem) && (it.styleRes != R.style.Theme_Tachiyomi_Monet || supportsDynamic) }
-                    .map { ThemeItem(it, true) },
+                    .filter {
+                        (it.isDarkTheme || it.followsSystem) &&
+                            (it.styleRes != R.style.Theme_Tachiyomi_Monet || supportsDynamic) &&
+                            (it != Themes.CUSTOM_DUSK || Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
+                    }.map { ThemeItem(it, true) },
             )
             isSelectable = false
         }
@@ -271,15 +279,19 @@ class ThemePreference
                     configuration.uiMode = if (item.isDarkTheme) UI_MODE_NIGHT_YES else UI_MODE_NIGHT_NO
                     val themeContext = context.createConfigurationContext(configuration)
                     themeContext.setTheme(item.theme.styleRes)
+                    val customDuskPalette =
+                        item.theme
+                            .takeIf { it == Themes.CUSTOM_DUSK }
+                            ?.let { CustomDuskPalette.fromSeed(preferences.customDuskAccentColor().get()) }
                     val primaryText = themeContext.getResourceColor(R.attr.colorOnBackground)
                     val secondaryText = themeContext.getResourceColor(android.R.attr.textColorSecondary)
                     val background = themeContext.getResourceColor(R.attr.background)
-                    val colorPrimary = themeContext.getResourceColor(R.attr.colorPrimary)
+                    val colorPrimary = customDuskPalette?.primary ?: themeContext.getResourceColor(R.attr.colorPrimary)
                     val appBar = themeContext.getResourceColor(R.attr.colorSurface)
                     val appBarText = themeContext.getResourceColor(R.attr.actionBarTintColor)
                     val bottomBar = themeContext.getResourceColor(R.attr.colorSurfaceContainer)
                     val inactiveTab = themeContext.getResourceColor(R.attr.tabBarIconInactive)
-                    val activeTab = themeContext.getResourceColor(R.attr.tabBarIconColor)
+                    val activeTab = customDuskPalette?.primary ?: themeContext.getResourceColor(R.attr.tabBarIconColor)
                     binding.themeToolbar.setBackgroundColor(appBar)
                     binding.themeAppBarText.imageTintList = ColorStateList.valueOf(appBarText)
                     binding.themeHeroImage.imageTintList = ColorStateList.valueOf(primaryText)

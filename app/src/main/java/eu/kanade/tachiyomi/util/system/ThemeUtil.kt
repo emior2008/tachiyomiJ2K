@@ -3,6 +3,7 @@ package eu.kanade.tachiyomi.util.system
 import android.content.Context
 import android.content.res.Resources
 import android.graphics.Color
+import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.edit
@@ -54,7 +55,21 @@ object ThemeUtil {
 }
 
 fun AppCompatActivity.setThemeByPref(preferences: PreferencesHelper) {
-    setTheme(getPrefTheme(preferences).styleRes)
+    val prefTheme = getPrefTheme(preferences)
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+        if (prefTheme == Themes.CUSTOM_DUSK) {
+            applyCustomDuskColorResources(
+                CustomDuskPalette.fromSeed(
+                    preferences.customDuskAccentColor().get(),
+                    CustomDuskDownloadBadgeStyle.fromPreference(preferences.customDuskDownloadBadgeStyle().get()),
+                    preferences.customDuskDownloadBadgeColor().get(),
+                ),
+            )
+        } else {
+            clearCustomDuskColorResources()
+        }
+    }
+    setTheme(prefTheme.styleRes)
 }
 
 fun AppCompatActivity.getThemeWithExtras(
@@ -89,7 +104,13 @@ fun Context.getPrefTheme(preferences: PreferencesHelper): Themes {
             } else {
                 preferences.lightTheme()
             }
-        ).get()
+        ).get().let { selectedTheme ->
+            if (selectedTheme == Themes.CUSTOM_DUSK && Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
+                Themes.SPRING_AND_DUSK
+            } else {
+                selectedTheme
+            }
+        }
     } catch (e: Exception) {
         ThemeUtil.convertNewThemes(preferences.context)
         getPrefTheme(preferences)

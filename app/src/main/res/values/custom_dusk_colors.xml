@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="custom_dusk_primary">#F02475</color>
+    <color name="custom_dusk_primary_inverse">#8D0C3F</color>
+    <color name="custom_dusk_on_primary">#370318</color>
+    <color name="custom_dusk_secondary">#FFC1DA</color>
+    <color name="custom_dusk_primary_container">#421A2A</color>
+    <color name="custom_dusk_secondary_container">#42182F</color>
+    <color name="custom_dusk_on_primary_container">#F02475</color>
+    <color name="custom_dusk_tertiary">#127C52</color>
+    <color name="custom_dusk_on_tertiary">#FFFFFF</color>
+    <color name="custom_dusk_ripple">#1FF02475</color>
+</resources>

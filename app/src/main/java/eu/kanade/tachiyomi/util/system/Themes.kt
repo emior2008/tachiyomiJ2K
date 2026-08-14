@@ -30,6 +30,11 @@ enum class Themes(
         R.string.spring_blossom,
         R.string.midnight_dusk,
     ),
+    CUSTOM_DUSK(
+        R.style.Theme_Tachiyomi_CustomDusk,
+        AppCompatDelegate.MODE_NIGHT_YES,
+        R.string.custom_dusk,
+    ),
     STRAWBERRIES(
         R.style.Theme_Tachiyomi_Strawberries,
         AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM,

@@ -31,10 +31,10 @@ import eu.kanade.tachiyomi.data.preference.asImmediateFlowIn
 import eu.kanade.tachiyomi.databinding.WebviewActivityBinding
 import eu.kanade.tachiyomi.ui.base.activity.BaseActivity
 import eu.kanade.tachiyomi.ui.security.SecureActivityDelegate
-import eu.kanade.tachiyomi.util.system.getPrefTheme
 import eu.kanade.tachiyomi.util.system.getResourceColor
 import eu.kanade.tachiyomi.util.system.isInNightMode
 import eu.kanade.tachiyomi.util.system.setDefaultSettings
+import eu.kanade.tachiyomi.util.system.setThemeByPref
 import eu.kanade.tachiyomi.util.view.setStyle
 
 open class BaseWebViewActivity : BaseActivity<WebviewActivityBinding>() {
@@ -181,8 +181,7 @@ open class BaseWebViewActivity : BaseActivity<WebviewActivityBinding>() {
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
         val lightMode = !isInNightMode()
-        val prefTheme = getPrefTheme(preferences)
-        setTheme(prefTheme.styleRes)
+        setThemeByPref(preferences)
         if (!lightMode && preferences.themeDarkAmoled().get()) {
             setTheme(R.style.ThemeOverlay_Tachiyomi_Amoled)
         }

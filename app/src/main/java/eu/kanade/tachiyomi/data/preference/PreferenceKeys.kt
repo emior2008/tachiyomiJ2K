@@ -8,6 +8,9 @@ object PreferenceKeys {
     const val lightTheme = "light_theme"
     const val darkTheme = "dark_theme"
     const val themeDarkAmoled = "pref_theme_dark_amoled_key"
+    const val customDuskAccentColor = "custom_dusk_accent_color"
+    const val customDuskDownloadBadgeStyle = "custom_dusk_download_badge_style"
+    const val customDuskDownloadBadgeColor = "custom_dusk_download_badge_color"
 
     const val startingTab = "starting_tab"
 
