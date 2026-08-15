@@ -107,18 +107,30 @@
                     app:layout_constraintWidth_min="wrap"
                     android:layout_height="wrap_content"
                     app:layout_constraintTop_toBottomOf="@id/stats_item"
-                    app:layout_constraintBottom_toTopOf="@+id/help_item"
+                    app:layout_constraintBottom_toTopOf="@+id/failed_updates_item"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintEnd_toEndOf="parent"
                     android:text="@string/about"
                     app:icon="@drawable/ic_info_outline_24dp" />
 
                 <eu.kanade.tachiyomi.widget.MenuSheetItemView
-                    android:id="@+id/help_item"
+                    android:id="@+id/failed_updates_item"
                     android:layout_width="0dp"
                     app:layout_constraintWidth_min="wrap"
                     android:layout_height="wrap_content"
                     app:layout_constraintTop_toBottomOf="@id/about_item"
+                    app:layout_constraintBottom_toTopOf="@+id/help_item"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    android:text="@string/failed_updates"
+                    app:icon="@drawable/ic_history_24dp" />
+
+                <eu.kanade.tachiyomi.widget.MenuSheetItemView
+                    android:id="@+id/help_item"
+                    android:layout_width="0dp"
+                    app:layout_constraintWidth_min="wrap"
+                    android:layout_height="wrap_content"
+                    app:layout_constraintTop_toBottomOf="@id/failed_updates_item"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintBottom_toBottomOf="parent"

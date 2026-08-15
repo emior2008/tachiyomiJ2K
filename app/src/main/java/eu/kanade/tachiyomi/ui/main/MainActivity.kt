@@ -101,6 +101,7 @@ import eu.kanade.tachiyomi.ui.library.LibraryController
 import eu.kanade.tachiyomi.ui.manga.MangaDetailsController
 import eu.kanade.tachiyomi.ui.more.AboutController
 import eu.kanade.tachiyomi.ui.more.OverflowDialog
+import eu.kanade.tachiyomi.ui.more.failedupdates.FailedUpdatesController
 import eu.kanade.tachiyomi.ui.more.stats.StatsController
 import eu.kanade.tachiyomi.ui.recents.RecentsController
 import eu.kanade.tachiyomi.ui.recents.RecentsViewType
@@ -1269,6 +1270,10 @@ open class MainActivity : BaseActivity<MainActivityBinding>() {
                     controller?.showSheet()
                 }
             }
+            SHORTCUT_FAILED_UPDATES -> {
+                if (!router.hasRootController()) goToStartingTab()
+                router.pushController(FailedUpdatesController().withFadeTransaction())
+            }
             Intent.ACTION_VIEW -> {
                 // Deep link to add extension store
                 if (intent.isAddExtensionRepoIntent()) {
@@ -1593,6 +1598,10 @@ open class MainActivity : BaseActivity<MainActivityBinding>() {
         router.pushController(StatsController().withFadeTransaction())
     }
 
+    fun showFailedUpdates() {
+        router.pushController(FailedUpdatesController().withFadeTransaction())
+    }
+
     override fun dispatchTouchEvent(ev: MotionEvent?): Boolean {
         ev?.let {
             gestureDetector?.onTouchEvent(it)
@@ -1855,6 +1864,7 @@ open class MainActivity : BaseActivity<MainActivityBinding>() {
         const val SHORTCUT_RECENTLY_READ = "eu.kanade.tachiyomi.SHOW_RECENTLY_READ"
         const val SHORTCUT_BROWSE = "eu.kanade.tachiyomi.SHOW_BROWSE"
         const val SHORTCUT_DOWNLOADS = "eu.kanade.tachiyomi.SHOW_DOWNLOADS"
+        const val SHORTCUT_FAILED_UPDATES = "eu.kanade.tachiyomi.SHOW_FAILED_UPDATES"
         const val SHORTCUT_MANGA = "eu.kanade.tachiyomi.SHOW_MANGA"
         const val SHORTCUT_MANGA_BACK = "eu.kanade.tachiyomi.SHOW_MANGA_BACK"
         const val SHORTCUT_UPDATE_NOTES = "eu.kanade.tachiyomi.SHOW_UPDATE_NOTES"

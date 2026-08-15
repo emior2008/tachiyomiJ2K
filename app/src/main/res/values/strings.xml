@@ -1267,4 +1267,13 @@
     <string name="view_chapters">View chapters</string>
     <string name="warning">Warning</string>
     <string name="wifi">Wi-Fi</string>
+    <string name="failed_updates">Failed updates</string>
+    <string name="no_failed_updates">No failed updates</string>
+    <string name="retry_selected">Retry selected</string>
+    <string name="clear_selected">Clear selected</string>
+    <string name="clear_failed_updates">Clear selected failed updates?</string>
+    <string name="clear_failed_updates_confirmation">This removes the selected entries from the saved failed-update list. It does not retry or modify your manga.</string>
+    <string name="failed_update_error_group">%1$s (%2$d)</string>
+    <string name="expand_collapse">Expand or collapse</string>
+    <string name="library_update_already_running">A library update is already running</string>
 </resources>

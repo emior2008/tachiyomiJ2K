@@ -7,6 +7,7 @@ import eu.kanade.tachiyomi.data.cache.CoverCache
 import eu.kanade.tachiyomi.data.database.DatabaseHelper
 import eu.kanade.tachiyomi.data.download.DownloadManager
 import eu.kanade.tachiyomi.data.library.CustomMangaManager
+import eu.kanade.tachiyomi.data.library.LibraryUpdateFailureStore
 import eu.kanade.tachiyomi.data.preference.AndroidPreferenceStore
 import eu.kanade.tachiyomi.data.preference.PreferenceStore
 import eu.kanade.tachiyomi.data.preference.PreferencesHelper
@@ -57,6 +58,8 @@ class AppModule(
         addSingletonFactory { DownloadManager(app) }
 
         addSingletonFactory { CustomMangaManager(app) }
+
+        addSingletonFactory { LibraryUpdateFailureStore(app, get()) }
 
         addSingletonFactory { TrackManager(app) }
 

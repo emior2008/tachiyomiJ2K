@@ -119,6 +119,11 @@ class OverflowDialog(
             dismiss()
         }
 
+        binding.failedUpdatesItem.setOnClickListener {
+            activity.showFailedUpdates()
+            dismiss()
+        }
+
         binding.statsItem.setOnClickListener {
             activity.showStats()
             dismiss()

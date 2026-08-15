@@ -52,6 +52,7 @@ import eu.kanade.tachiyomi.util.storage.getUriCompat
 import eu.kanade.tachiyomi.util.system.createFileInCacheDir
 import eu.kanade.tachiyomi.util.system.isConnectedToWifi
 import eu.kanade.tachiyomi.util.system.localeContext
+import eu.kanade.tachiyomi.util.system.notificationManager
 import eu.kanade.tachiyomi.util.system.tryToSetForeground
 import eu.kanade.tachiyomi.util.system.withIOContext
 import kotlinx.coroutines.CoroutineScope
@@ -74,6 +75,7 @@ import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
 import java.io.File
 import java.lang.ref.WeakReference
+import java.util.Collections
 import java.util.Date
 import java.util.concurrent.CancellationException
 import java.util.concurrent.ConcurrentHashMap
@@ -91,6 +93,7 @@ class LibraryUpdateJob(
     private val downloadManager: DownloadManager = Injekt.get()
     private val trackManager: TrackManager = Injekt.get()
     private val mangaShortcutManager: MangaShortcutManager = Injekt.get()
+    private val failureStore: LibraryUpdateFailureStore = Injekt.get()
 
     private var extraDeferredJobs = mutableListOf<Deferred<Any>>()
 
@@ -107,10 +110,14 @@ class LibraryUpdateJob(
     private val newUpdates = mutableMapOf<LibraryManga, Array<Chapter>>()
 
     // List containing failed updates
-    private val failedUpdates = mutableMapOf<Manga, String?>()
+    private val failedUpdates = Collections.synchronizedMap(mutableMapOf<Manga, String?>())
 
     // List containing skipped updates
     private val skippedUpdates = mutableMapOf<Manga, String?>()
+
+    private var isFailedUpdateRetry = false
+    private var retriedMangaIds = emptySet<Long>()
+    private val completedRetryMangaIds = ConcurrentHashMap.newKeySet<Long>()
 
     // IDs of manga whose details were already refreshed alongside their chapter update
     private val detailsRefreshedMangaIds = ConcurrentHashMap.newKeySet<Long>()
@@ -149,9 +156,13 @@ class LibraryUpdateJob(
         instance = WeakReference(this)
 
         val target = inputData.getString(KEY_TARGET)?.let { Target.valueOf(it) } ?: Target.CHAPTERS
+        isFailedUpdateRetry = inputData.getBoolean(KEY_RETRY_FAILED, false)
 
-        // If this is a chapter update, set the last update time to now
-        if (target == Target.CHAPTERS) {
+        // A normal chapter update starts a fresh failure session. Targeted retries preserve
+        // unresolved failures that were not selected.
+        if (target == Target.CHAPTERS && !isFailedUpdateRetry) {
+            failureStore.clear()
+            context.notificationManager.cancel(Notifications.ID_LIBRARY_ERROR)
             preferences.libraryUpdateLastTimestamp().set(Date().time)
         }
 
@@ -175,6 +186,10 @@ class LibraryUpdateJob(
                     getMangaToUpdate()
                 }
             ).sortedBy { it.title }
+
+        if (isFailedUpdateRetry) {
+            retriedMangaIds = mangaList.mapNotNull { it.id }.toSet()
+        }
 
         return withIOContext {
             try {
@@ -205,7 +220,10 @@ class LibraryUpdateJob(
             sendUpdate(STARTING_UPDATE_SOURCE)
         }
         when (target) {
-            Target.CHAPTERS -> updateChaptersJob(filterMangaToUpdate(mangaToAdd))
+            Target.CHAPTERS -> {
+                val mangas = if (isFailedUpdateRetry) mangaToAdd else filterMangaToUpdate(mangaToAdd)
+                updateChaptersJob(mangas)
+            }
             Target.DETAILS -> updateDetails(mangaToAdd)
             else -> updateTrackings(mangaToAdd)
         }
@@ -393,9 +411,35 @@ class LibraryUpdateJob(
                 ).getUriCompat(context)
             notifier.showUpdateSkippedNotification(skippedUpdates.map { it.key.title }, skippedFile)
         }
-        if (failedUpdates.isNotEmpty() && Notifications.isNotificationChannelEnabled(context, Notifications.CHANNEL_LIBRARY_ERROR)) {
-            val errorFile = writeErrorFile(failedUpdates).getUriCompat(context)
-            notifier.showUpdateErrorNotification(failedUpdates.map { it.key.title }, errorFile)
+        val persistedFailures =
+            failedUpdates.mapNotNull { (manga, error) ->
+                manga.id?.let { LibraryUpdateFailure(it, error) }
+            }
+        val unresolvedFailures: Map<Manga, String?> =
+            if (isFailedUpdateRetry) {
+                // A cancelled retry only reconciles manga whose attempt actually finished.
+                // Selected manga that were not reached (or were interrupted) keep their old failure.
+                val retryIdsToReconcile =
+                    if (wasStopped || isStopped) completedRetryMangaIds.toSet() else retriedMangaIds
+                failureStore.applyRetryResult(retryIdsToReconcile, persistedFailures)
+                val libraryById =
+                    db.getLibraryMangas().executeAsBlocking().mapNotNull { manga ->
+                        manga.id?.let { it to manga }
+                    }.toMap()
+                buildMap {
+                    failureStore.getAll().forEach { failure ->
+                        libraryById[failure.mangaId]?.let { manga -> put(manga, failure.error) }
+                    }
+                }
+            } else {
+                failureStore.replace(persistedFailures)
+                failedUpdates.toMap()
+            }
+        if (unresolvedFailures.isNotEmpty() && Notifications.isNotificationChannelEnabled(context, Notifications.CHANNEL_LIBRARY_ERROR)) {
+            val errorFile = writeErrorFile(unresolvedFailures).getUriCompat(context)
+            notifier.showUpdateErrorNotification(unresolvedFailures.map { it.key.title }, errorFile)
+        } else if (unresolvedFailures.isEmpty()) {
+            context.notificationManager.cancel(Notifications.ID_LIBRARY_ERROR)
         }
         mangaShortcutManager.updateShortcuts(context)
         failedUpdates.clear()
@@ -495,10 +539,16 @@ class LibraryUpdateJob(
                         sendUpdate(manga.id)
                     }
                 }
+                if (isFailedUpdateRetry) {
+                    manga.id?.let(completedRetryMangaIds::add)
+                }
                 return@coroutineScope hasDownloads
             } catch (e: Exception) {
                 if (e !is CancellationException) {
                     failedUpdates[manga] = e.message
+                    if (isFailedUpdateRetry) {
+                        manga.id?.let(completedRetryMangaIds::add)
+                    }
                     Timber.e("Failed updating: ${manga.title}: $e")
                 }
                 return@coroutineScope false
@@ -688,6 +738,7 @@ class LibraryUpdateJob(
         private const val ERROR_LOG_HELP_URL = "https://mihon.app/docs/guides/troubleshooting/"
 
         private const val MANGA_PER_SOURCE_QUEUE_WARNING_THRESHOLD = 60
+        private const val MAX_MANGA_IDS_IN_DATA = 1000
 
         /**
          * Key for category to update.
@@ -701,6 +752,7 @@ class LibraryUpdateJob(
         private const val KEY_TARGET = "target"
 
         private const val KEY_MANGAS = "mangas"
+        private const val KEY_RETRY_FAILED = "retry_failed_updates"
 
         private var instance: WeakReference<LibraryUpdateJob>? = null
 
@@ -773,9 +825,10 @@ class LibraryUpdateJob(
             category: Category? = null,
             target: Target = Target.CHAPTERS,
             mangaToUse: List<LibraryManga>? = null,
+            retryFailedUpdates: Boolean = false,
         ): Boolean {
             if (isRunning(context)) {
-                if (target == Target.CHAPTERS) {
+                if (!retryFailedUpdates && target == Target.CHAPTERS) {
                     category?.id?.let {
                         if (mangaToUse != null) {
                             instance?.get()?.addMangaToQueue(it, mangaToUse)
@@ -790,14 +843,19 @@ class LibraryUpdateJob(
 
             val builder = Data.Builder()
             builder.putString(KEY_TARGET, target.name)
-            category?.id?.let { id ->
-                builder.putInt(KEY_CATEGORY, id)
-                if (mangaToUse != null) {
+            builder.putBoolean(KEY_RETRY_FAILED, retryFailedUpdates)
+            category?.id?.let { id -> builder.putInt(KEY_CATEGORY, id) }
+            if (mangaToUse != null) {
+                val mangaIds = mangaToUse.mapNotNull { it.id }
+                if (retryFailedUpdates && mangaIds.size <= MAX_MANGA_IDS_IN_DATA) {
+                    builder.putLongArray(KEY_MANGAS, mangaIds.toLongArray())
+                    extraManga = emptyList()
+                } else {
                     builder.putLongArray(
                         KEY_MANGAS,
-                        mangaToUse.firstOrNull()?.id?.let { longArrayOf(it) } ?: longArrayOf(),
+                        mangaIds.firstOrNull()?.let { longArrayOf(it) } ?: longArrayOf(),
                     )
-                    extraManga = mangaToUse.subList(1, mangaToUse.size).mapNotNull { it.id }
+                    extraManga = mangaIds.drop(1)
                 }
             }
             val inputData = builder.build()

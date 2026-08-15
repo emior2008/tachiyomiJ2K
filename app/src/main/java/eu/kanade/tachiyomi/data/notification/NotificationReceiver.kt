@@ -534,6 +534,20 @@ class NotificationReceiver : BroadcastReceiver() {
             )
         }
 
+        /** Returns a [PendingIntent] that opens the saved failed-library-updates screen. */
+        internal fun openFailedUpdatesPendingActivity(context: Context): PendingIntent {
+            val intent =
+                Intent(context, MainActivity::class.java)
+                    .setAction(MainActivity.SHORTCUT_FAILED_UPDATES)
+                    .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+            return PendingIntent.getActivity(
+                context,
+                MainActivity.SHORTCUT_FAILED_UPDATES.hashCode(),
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+            )
+        }
+
         /**
          * Returns [PendingIntent] that opens the error or skipped log file in an external viewer
          *

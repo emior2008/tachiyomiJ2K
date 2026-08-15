@@ -106,7 +106,8 @@ class LibraryUpdateNotifier(
         if (errors.isEmpty()) {
             return
         }
-        val pendingIntent = NotificationReceiver.openErrorOrSkippedLogPendingActivity(context, uri)
+        val detailsIntent = NotificationReceiver.openFailedUpdatesPendingActivity(context)
+        val logIntent = NotificationReceiver.openErrorOrSkippedLogPendingActivity(context, uri)
         context.notificationManager.notify(
             Notifications.ID_LIBRARY_ERROR,
             context
@@ -120,12 +121,12 @@ class LibraryUpdateNotifier(
                             },
                         ),
                     )
-                    setContentIntent(pendingIntent)
+                    setContentIntent(detailsIntent)
                     setSmallIcon(R.drawable.ic_tachij2k_notification)
                     addAction(
                         R.drawable.ic_file_open_24dp,
                         context.getString(R.string.open_log),
-                        pendingIntent,
+                        logIntent,
                     )
                 }.build(),
         )
